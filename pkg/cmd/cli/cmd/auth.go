@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"io"
 	"os"
+	"errors"
 
 	kapi "k8s.io/kubernetes/pkg/api"
 	kapierrors "k8s.io/kubernetes/pkg/api/errors"
@@ -90,6 +91,7 @@ type AuthOptions struct {
 	KeyFile  string
 
 	Token string
+	SparkClusterName string
 
 	PathOptions *kcmdconfig.PathOptions
 }
@@ -118,16 +120,18 @@ func (o *AuthOptions) Complete(f *osclientcmd.Factory, cmd *cobra.Command, args 
 		o.StartingKubeConfig = kclientcmdapi.NewConfig()
 	}
 
+	argsLength := len(args)
+	switch {
+	case argsLength > 1:
+		return errors.New("Only one argument is supported (cluster name).")
+	case argsLength == 1:
+		o.SparkClusterName = args[0]
+	}
+
 	addr := flagtypes.Addr{Value: "localhost:8443", DefaultScheme: "https", DefaultPort: 8443, AllowPrefix: true}.Default()
 
 	if serverFlag := kcmdutil.GetFlagString(cmd, "server"); len(serverFlag) > 0 {
 		if err := addr.Set(serverFlag); err != nil {
-			return err
-		}
-		o.Server = addr.String()
-
-	} else if len(args) == 1 {
-		if err := addr.Set(args[0]); err != nil {
 			return err
 		}
 		o.Server = addr.String()
@@ -455,7 +459,7 @@ func (o *AuthOptions) GatherInfo() error {
 }
 
 // RunLogin contains all the necessary functionality for the OpenShift cli login command
-func RunLogin(cmd *cobra.Command, options *AuthOptions) error {
+func RunGetCmd(cmd *cobra.Command, options *AuthOptions) error {
 	if err := options.GatherInfo(); err != nil {
 		return err
 	}
@@ -467,7 +471,7 @@ func RunLogin(cmd *cobra.Command, options *AuthOptions) error {
 	return nil
 }
 
-func NewCmdLogin(fullName string, f *osclientcmd.Factory, reader io.Reader, out io.Writer) *cobra.Command {
+func NewCmdGet(fullName string, f *osclientcmd.Factory, reader io.Reader, out io.Writer) *cobra.Command {
 	options := &AuthOptions{
 		Reader: reader,
 		Out:    out,
@@ -475,15 +479,13 @@ func NewCmdLogin(fullName string, f *osclientcmd.Factory, reader io.Reader, out 
 
 	cmds := &cobra.Command{
 		Use:   "get ",
-		Short: "get cluster",
-		//Long:    loginLong,
-		//Example: fmt.Sprintf(loginExample, fullName),
+		Short: "get <NAME>",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := options.Complete(f, cmd, args); err != nil {
 				kcmdutil.CheckErr(err)
 			}
 
-			err := RunLogin(cmd, options)
+			err := RunGetCmd(cmd, options)
 
 			if kapierrors.IsUnauthorized(err) {
 				fmt.Fprintln(out, "Login failed (401 Unauthorized)")

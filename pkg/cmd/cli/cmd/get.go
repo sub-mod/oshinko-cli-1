@@ -51,7 +51,7 @@ type GetOptions struct {
 }
 
 // NewCmdGet is a wrapper for the Kubernetes cli get command
-func NewCmdGet(fullName string, f *clientcmd.Factory, out io.Writer) *cobra.Command {
+func NewCmdGet1(fullName string, f *clientcmd.Factory, out io.Writer) *cobra.Command {
 	cmd := CmdGet(f.Factory, out)
 	cmd.Long = fmt.Sprintf(getLong, fullName)
 	cmd.Example = fmt.Sprintf(getExample, fullName)
