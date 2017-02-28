@@ -25,6 +25,12 @@ debug:
 	scripts/build.sh debug
 
 
+cmd:
+	hack/test-cmd.sh
+
+
+
+
 # Run command tests. Uses whatever binaries are currently built.
 #
 # Example:
@@ -32,3 +38,4 @@ debug:
 test-cmd: build
 	hack/test-cmd.sh
 .PHONY: test-cmd
+.PHONY: cmd

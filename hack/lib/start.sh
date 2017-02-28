@@ -229,28 +229,29 @@ function os::start::server() {
 	local api_server_version="${1:-}"
 	local controllers_version="${2:-}"
 	local skip_node="${3:-}"
-
+    echo "os::start::server"
+    echo "$api_server_version"
 	os::log::info "Scan of OpenShift related processes already up via ps -ef	| grep openshift : "
 	ps -ef | grep openshift
 
 	mkdir -p "${LOG_DIR}"
 
-	if [[ -z "${api_server_version}" && -z "${controllers_version}" ]]; then
-		if [[ -z "${skip_node}" ]]; then
-			os::start::internal::print_server_info
-			os::start::all_in_one
-		else
-			os::start::master
-		fi
-	else
+#	if [[ -z "${api_server_version}" && -z "${controllers_version}" ]]; then
+#		if [[ -z "${skip_node}" ]]; then
+#			os::start::internal::print_server_info
+#			os::start::all_in_one
+#		else
+#			os::start::master
+#		fi
+#	else
 		os::start::internal::print_server_info
 		os::start::etcd
 		os::start::api_server "${api_server_version}"
 		os::start::controllers "${controllers_version}"
-		if [[ -z "${skip_node}" ]]; then
-			os::start::node
-		fi
-	fi
+		#if [[ -z "${skip_node}" ]]; then
+			os::start::internal::start_node
+		#fi
+#	fi
 }
 readonly -f os::start::server
 
@@ -324,6 +325,7 @@ readonly -f os::start::master
 # Returns:
 #  - export OS_PID
 function os::start::all_in_one() {
+    echo "os::start::all_in_one\n"
 	local use_latest_images
 	if [[ -n "${USE_LATEST_IMAGES:-}" ]]; then
 		use_latest_images="true"
